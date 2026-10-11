@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
+    <iq:application entry="RawBaroApp"
+                   id="B2FF546960D24908A9DD275942E14698"
+                   launcherIcon="@Drawables.LauncherIcon"
+                   name="@Strings.AppName"
+                   type="watch-app"
+                   minApiLevel="3.2.0">
+        <iq:products>
+            <iq:product id="fenix8solar51mm"/>
+            <iq:product id="fenix8solar47mm"/>
+            <iq:product id="fenix847mm"/>
+            <iq:product id="fenix843mm"/>
+            <iq:product id="fenix8pro47mm"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:uses-permission id="Sensor"/>
+            <iq:uses-permission id="SensorHistory"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
