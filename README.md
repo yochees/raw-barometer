@@ -2,8 +2,10 @@
 
 Connect IQ glance for the fenix 8. It shows the raw (station) pressure in hPa:
 the value the sensor measures, not reduced to sea level and not corrected for
-altitude. Layout follows the stock Barometer glance; START opens a full view
-with the trend graph (START / DOWN / UP change the period: 4, 12, 24 hours).
+altitude. Glance and full view are a pixel copy of the stock fenix 8 MIP
+Barometer screens (measured on watch screenshots), with our own icon. START
+opens the full view; there START / DOWN / UP change the period (4, 12, 24
+hours).
 
 Value source, first one that has data: `Activity.Info.rawAmbientPressure`,
 `Sensor.Info.pressure`, `Activity.Info.ambientPressure`, last

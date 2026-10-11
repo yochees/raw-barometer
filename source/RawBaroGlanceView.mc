@@ -2,8 +2,9 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Same layout as the stock Barometer glance: title on top, current value
-// with its unit below, and a small trend line on the right.
+// Pixel copy of the stock Barometer glance on the fenix 8 MIP: title in the
+// glance font, value in Bionic, and a blue trend line from x = 98 to the
+// right edge. The line covers the same time as the full view graph.
 (:glance)
 class RawBaroGlanceView extends WatchUi.GlanceView {
 
@@ -13,36 +14,61 @@ class RawBaroGlanceView extends WatchUi.GlanceView {
 
     function onUpdate(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
-        var h = dc.getHeight();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.clear();
 
-        var titleFont = RawBaroData.font(RawBaroData.TEXT_FACE, 26, Graphics.FONT_GLANCE);
-        var valueFont = RawBaroData.font(RawBaroData.NUMBER_FACE, 44, Graphics.FONT_GLANCE_NUMBER);
-        var titleH = dc.getFontHeight(titleFont);
-        var valueH = dc.getFontHeight(valueFont);
-        var top = (h - titleH - valueH) / 2;
-
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(0, top, titleFont, "Raw Barometer", Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(0, 14, Graphics.FONT_GLANCE, "Raw Barometer", Graphics.TEXT_JUSTIFY_LEFT);
 
-        var value = RawBaroData.format(RawBaroData.current());
-        var vy = top + titleH;
-        dc.drawText(0, vy, valueFont, value, Graphics.TEXT_JUSTIFY_LEFT);
-        var vw = dc.getTextWidthInPixels(value, valueFont);
-        var unitFont = RawBaroData.font(RawBaroData.TEXT_FACE, 22, Graphics.FONT_XTINY);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(vw + 3, vy + valueH - dc.getFontHeight(unitFont) - 2, unitFont, "hPa", Graphics.TEXT_JUSTIFY_LEFT);
-
-        // Trend graph for the last 4 hours fills all the space right of the
-        // value, to the edge of the glance and down to its bottom. The round
-        // bezel crops the corner when the glance is not in the centre slot.
-        var gx = vw + 3 + dc.getTextWidthInPixels("hPa", unitFont) + 8;
-        var gw = w - gx;
-        var gy = vy + 4;
-        var gh = h - 2 - gy;
-        if (gw >= 30 && gh >= 10) {
-            RawBaroData.drawGraph(dc, RawBaroData.history(4, gw / 3), gx, gy, gw, gh, 1.0, Graphics.COLOR_WHITE);
+        var valueFont = Graphics.FONT_GLANCE_NUMBER;
+        if (Graphics has :getVectorFont) {
+            var vf = Graphics.getVectorFont({:face => ["BionicSemiBold", "RobotoCondensedBold"], :size => 40});
+            if (vf != null) {
+                valueFont = vf;
+            }
         }
+        dc.drawText(0, 40, valueFont, RawBaroData.format(RawBaroData.current()), Graphics.TEXT_JUSTIFY_LEFT);
+
+        // Trend line, scaled to the lowest and highest reading so it always
+        // fills y = 48..84 (with the 2 px pen that is 47..85, as on the stock
+        // glance).
+        var gx = 98;
+        var n = w - gx;
+        if (n < 10) {
+            return;
+        }
+        var h = RawBaroData.history(RawBaroData.WINDOW_4H, n);
+        var cols = h[0] as Array<Float or Null>;
+        var lo = h[1];
+        var hi = h[3];
+        if (lo == null || hi == null) {
+            return;
+        }
+        var range = hi - lo;
+        if (range < 0.2) {
+            lo -= (0.2 - range) / 2;
+            range = 0.2;
+        }
+        if (dc has :setAntiAlias) {
+            dc.setAntiAlias(true);
+        }
+        dc.setColor(RawBaroData.BLUE, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(2);
+        var px = -1;
+        var py = 0;
+        for (var i = 0; i < n; i++) {
+            var p = cols[i];
+            if (p == null) {
+                px = -1;
+                continue;
+            }
+            var y = 48 + ((hi - p) / range * 36).toNumber();
+            if (px >= 0) {
+                dc.drawLine(px, py, gx + i, y);
+            }
+            px = gx + i;
+            py = y;
+        }
+        dc.setPenWidth(1);
     }
 }

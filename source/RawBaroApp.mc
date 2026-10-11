@@ -17,4 +17,9 @@ class RawBaroApp extends Application.AppBase {
     function getGlanceView() as [WatchUi.GlanceView] or [WatchUi.GlanceView, WatchUi.GlanceViewDelegate] or Null {
         return [new RawBaroGlanceView()];
     }
+
+    // Light blue side bar, as on the stock Barometer glance.
+    function getGlanceTheme() as Application.AppBase.GlanceTheme {
+        return Application.AppBase.GLANCE_THEME_LIGHT_BLUE;
+    }
 }

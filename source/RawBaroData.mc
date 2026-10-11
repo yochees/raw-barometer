@@ -1,5 +1,4 @@
 import Toybox.Activity;
-import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
 import Toybox.Sensor;
@@ -10,6 +9,17 @@ import Toybox.Time;
 // level and not corrected for altitude. All values are in hPa (= mbar).
 (:glance)
 module RawBaroData {
+
+    // The 4 hour view: 48 px per hour over the 230 px graph box, so it
+    // shows 4.8 hours, the same as the stock screen.
+    const WINDOW_4H = 230 * 3600 / 48;
+
+    // Colours of the stock Barometer screens (MIP 64-colour palette).
+    const BLUE = 0x00AAFF;
+    const FILL = 0x000055;
+    const GRID = 0x555555;
+    const GRID_FILLED = 0x005555;
+    const LABEL = 0xAAAAAA;
 
     // Current raw pressure in hPa, or null if no source has a value.
     function current() as Float or Null {
@@ -34,102 +44,65 @@ module RawBaroData {
         return null;
     }
 
-    // Pressure history for the last `hours`, averaged into `n` buckets
-    // (oldest first). A bucket with no samples is null. Done in one pass so
-    // the glance never holds the full history in memory.
-    function history(hours as Number, n as Number) as Array<Float or Null> {
+    // Pressure history for the last `seconds`, averaged into `n` columns
+    // (oldest first, the last column is now). Returns
+    // [columns, minValue, minColumn, maxValue, maxColumn]; the extremes are
+    // single samples, not column averages, so the labels show real readings.
+    // Done in one pass so the full history is never held in memory.
+    function history(seconds as Number, n as Number) as Array {
         var sums = new Array<Float>[n];
         var counts = new Array<Number>[n];
         for (var i = 0; i < n; i++) {
             sums[i] = 0.0;
             counts[i] = 0;
         }
-        var span = hours * 3600;
+        var lo = null;
+        var loCol = 0;
+        var hi = null;
+        var hiCol = 0;
         var now = Time.now().value();
-        var it = SensorHistory.getPressureHistory({:period => new Time.Duration(span), :order => SensorHistory.ORDER_OLDEST_FIRST});
+        var it = SensorHistory.getPressureHistory({:period => new Time.Duration(seconds), :order => SensorHistory.ORDER_OLDEST_FIRST});
         var sample = it.next();
         while (sample != null) {
             if (sample.data != null && sample.when != null) {
                 var age = now - sample.when.value();
-                var b = n - 1 - (age * n / span);
-                if (b < 0) { b = 0; }
-                if (b > n - 1) { b = n - 1; }
-                sums[b] += sample.data;
-                counts[b] += 1;
+                var col = n - 1 - (age.toLong() * n / seconds).toNumber();
+                if (col >= 0) {
+                    if (col > n - 1) { col = n - 1; }
+                    var p = sample.data / 100.0;
+                    sums[col] += p;
+                    counts[col] += 1;
+                    if (lo == null || p < lo) { lo = p; loCol = col; }
+                    if (hi == null || p >= hi) { hi = p; hiCol = col; }
+                }
             }
             sample = it.next();
         }
-        var out = new Array<Float or Null>[n];
+        var cols = new Array<Float or Null>[n];
         for (var i = 0; i < n; i++) {
-            out[i] = counts[i] > 0 ? sums[i] / counts[i] / 100.0 : null;
+            cols[i] = counts[i] > 0 ? sums[i] / counts[i] : null;
         }
-        return out;
-    }
-
-    // Bionic is the fenix 8 system font. Older devices fall back to
-    // Roboto Condensed and then to the given bitmap font.
-    const TEXT_FACE = ["BionicSemiBold", "BionicBold", "RobotoCondensedBold"];
-    const NUMBER_FACE = ["BionicSemiBold", "BionicBold", "RobotoCondensedBold"];
-
-    function font(face as Array<String>, size as Number, fallback as Graphics.FontType) as Graphics.FontType {
-        if (Graphics has :getVectorFont) {
-            var vf = Graphics.getVectorFont({:face => face, :size => size});
-            if (vf != null) {
-                return vf;
+        // Samples are further apart than one column, so join known columns
+        // with straight lines. Nothing is added before the first or after
+        // the last sample.
+        var prev = -1;
+        for (var i = 0; i < n; i++) {
+            if (cols[i] == null) {
+                continue;
             }
+            if (prev >= 0 && i - prev > 1) {
+                var a = cols[prev] as Float;
+                var b = cols[i] as Float;
+                for (var j = prev + 1; j < i; j++) {
+                    cols[j] = a + (b - a) * (j - prev) / (i - prev);
+                }
+            }
+            prev = i;
         }
-        return fallback;
+        return [cols, lo, loCol, hi, hiCol];
     }
 
     function format(p as Float or Null) as String {
         return p == null ? "--" : p.format("%.1f");
-    }
-
-    // Draws `pts` as a line inside the box. Returns [min, max] or null.
-    // The vertical scale spans at least `minRange` hPa so sensor noise does
-    // not look like a weather front.
-    function drawGraph(dc as Graphics.Dc, pts as Array<Float or Null>, x as Number, y as Number,
-                       w as Number, h as Number, minRange as Float, color as Number) as [Float, Float] or Null {
-        var lo = null;
-        var hi = null;
-        for (var i = 0; i < pts.size(); i++) {
-            var p = pts[i];
-            if (p != null) {
-                if (lo == null || p < lo) { lo = p; }
-                if (hi == null || p > hi) { hi = p; }
-            }
-        }
-        if (lo == null || hi == null) {
-            return null;
-        }
-        var top = hi;
-        var bottom = lo;
-        if (top - bottom < minRange) {
-            var mid = (top + bottom) / 2.0;
-            top = mid + minRange / 2.0;
-            bottom = mid - minRange / 2.0;
-        }
-        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(2);
-        var n = pts.size();
-        var px = -1;
-        var py = -1;
-        for (var i = 0; i < n; i++) {
-            var p = pts[i];
-            if (p == null) {
-                continue;
-            }
-            var cx = x + (n > 1 ? i * (w - 1) / (n - 1) : 0);
-            var cy = y + h - 1 - ((p - bottom) / (top - bottom) * (h - 1)).toNumber();
-            if (px >= 0) {
-                dc.drawLine(px, py, cx, cy);
-            } else {
-                dc.drawPoint(cx, cy);
-            }
-            px = cx;
-            py = cy;
-        }
-        dc.setPenWidth(1);
-        return [lo, hi];
     }
 }
