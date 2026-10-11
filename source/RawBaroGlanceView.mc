@@ -3,7 +3,7 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 // Pixel copy of the stock Barometer glance on the fenix 8 MIP: title in the
-// glance font, value in Bionic, and a blue trend line from x = 98 to the
+// Bionic like the value, and a blue trend line from x = 98 to the
 // right edge. The line covers the same time as the full view graph.
 (:glance)
 class RawBaroGlanceView extends WatchUi.GlanceView {
@@ -18,16 +18,8 @@ class RawBaroGlanceView extends WatchUi.GlanceView {
         dc.clear();
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(0, 14, Graphics.FONT_GLANCE, "Raw Barometer", Graphics.TEXT_JUSTIFY_LEFT);
-
-        var valueFont = Graphics.FONT_GLANCE_NUMBER;
-        if (Graphics has :getVectorFont) {
-            var vf = Graphics.getVectorFont({:face => ["BionicSemiBold", "RobotoCondensedBold"], :size => 40});
-            if (vf != null) {
-                valueFont = vf;
-            }
-        }
-        dc.drawText(0, 40, valueFont, RawBaroData.format(RawBaroData.current()), Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(0, 11, RawBaroData.bionic(32, Graphics.FONT_GLANCE), "Raw Barometer", Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(0, 40, RawBaroData.bionic(40, Graphics.FONT_GLANCE_NUMBER), RawBaroData.format(RawBaroData.current()), Graphics.TEXT_JUSTIFY_LEFT);
 
         // Trend line, scaled to the lowest and highest reading so it always
         // fills y = 48..84 (with the 2 px pen that is 47..85, as on the stock

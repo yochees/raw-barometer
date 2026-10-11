@@ -21,6 +21,7 @@ class RawBaroView extends WatchUi.View {
     var _period as Number = 0;
     var _timer as Timer.Timer or Null;
     var _icon as WatchUi.BitmapResource or Null;
+    var _small as Graphics.FontType = Graphics.FONT_XTINY;
 
     function initialize() {
         View.initialize();
@@ -28,6 +29,7 @@ class RawBaroView extends WatchUi.View {
 
     function onLayout(dc as Graphics.Dc) as Void {
         _icon = WatchUi.loadResource(Rez.Drawables.Icon24) as WatchUi.BitmapResource;
+        _small = RawBaroData.bionic(26, Graphics.FONT_XTINY);
     }
 
     function nextPeriod() as Void {
@@ -79,7 +81,7 @@ class RawBaroView extends WatchUi.View {
         drawGraph(dc, hours);
 
         dc.setColor(RawBaroData.LABEL, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(138, 223, Graphics.FONT_XTINY, "Last " + hours + " Hours", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(138, 221, _small, "Last " + hours + " Hours", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     private function drawGraph(dc as Graphics.Dc, hours as Number) as Void {
@@ -187,12 +189,12 @@ class RawBaroView extends WatchUi.View {
 
         // Axis labels on the top and middle lines.
         dc.setColor(RawBaroData.LABEL, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(231, BOX_TOP - 11, Graphics.FONT_XTINY, top.toString(), Graphics.TEXT_JUSTIFY_LEFT);
-        dc.drawText(231, BOX_TOP + boxH / 2 - 11, Graphics.FONT_XTINY, (top - span / 2).toString(), Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(230, BOX_TOP - 13, _small, top.toString(), Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(230, BOX_TOP + boxH / 2 - 13, _small, (top - span / 2).toString(), Graphics.TEXT_JUSTIFY_LEFT);
 
         if (lo == null || hi == null) {
             dc.setColor(RawBaroData.LABEL, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(BOX_W / 2, BOX_TOP + boxH / 2 - 11, Graphics.FONT_XTINY, "No history", Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(BOX_W / 2, BOX_TOP + boxH / 2 - 13, _small, "No history", Graphics.TEXT_JUSTIFY_CENTER);
             return;
         }
 
@@ -220,12 +222,12 @@ class RawBaroView extends WatchUi.View {
         if (ys[maxX] >= 0) {
             var base = ys[maxX] + 6;
             drawTriangle(dc, maxX, ys[maxX] + 2, 1);
-            drawMarkerLabel(dc, maxX, base + 2, RawBaroData.format(hi));
+            drawMarkerLabel(dc, maxX, base, RawBaroData.format(hi));
         }
         if (ys[minX] >= 0) {
             var base = ys[minX] - 6;
             drawTriangle(dc, minX, ys[minX] - 2, -1);
-            drawMarkerLabel(dc, minX, base - 22, RawBaroData.format(lo));
+            drawMarkerLabel(dc, minX, base - 24, RawBaroData.format(lo));
         }
     }
 
@@ -253,14 +255,14 @@ class RawBaroView extends WatchUi.View {
     // White reading with a black outline, centred on x but kept inside the
     // graph on the right and 4 px inside the round screen on the left.
     private function drawMarkerLabel(dc as Graphics.Dc, x as Number, y as Number, text as String) as Void {
-        var font = Graphics.FONT_XTINY;
+        var font = _small;
         var w = dc.getTextWidthInPixels(text, font);
         var left = x - w / 2;
         if (left + w > BOX_W) {
             left = BOX_W - w;
         }
         var r = 140;
-        var dy = (y + 17 - 140).abs();
+        var dy = (y + 18 - 140).abs();
         var minLeft = r - Math.sqrt(r * r - dy * dy).toNumber() + 4 - 1;
         if (left < minLeft) {
             left = minLeft;

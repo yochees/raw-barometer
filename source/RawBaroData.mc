@@ -1,4 +1,5 @@
 import Toybox.Activity;
+import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
 import Toybox.Sensor;
@@ -100,6 +101,19 @@ module RawBaroData {
             prev = i;
         }
         return [cols, lo, loCol, hi, hiCol];
+    }
+
+    // Bionic is the fenix 8 system font. Sizes are matched to the stock
+    // screens: 32 gives 16 px capitals (glance title), 26 gives 13 px digits
+    // (graph labels), 40 gives 20 px digits (glance value).
+    function bionic(size as Number, fallback as Graphics.FontType) as Graphics.FontType {
+        if (Graphics has :getVectorFont) {
+            var vf = Graphics.getVectorFont({:face => ["BionicSemiBold", "BionicBold", "RobotoCondensedBold"], :size => size});
+            if (vf != null) {
+                return vf;
+            }
+        }
+        return fallback;
     }
 
     function format(p as Float or Null) as String {
