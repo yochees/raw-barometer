@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.Math;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
@@ -51,42 +52,60 @@ class RawBaroView extends WatchUi.View {
 
         var small = RawBaroData.font(RawBaroData.TEXT_FACE, 22, Graphics.FONT_XTINY);
         var smallH = dc.getFontHeight(small);
+        var titleFont = RawBaroData.font(RawBaroData.TEXT_FACE, 28, Graphics.FONT_TINY);
+        var bigFont = RawBaroData.font(RawBaroData.NUMBER_FACE, 64, Graphics.FONT_NUMBER_MEDIUM);
+        var bigH = dc.getFontHeight(bigFont);
+        var hours = PERIODS[_period];
+
+        // Stack from the edges in: title at the top, period label at the
+        // bottom, value above it. The graph takes everything in between.
+        var titleY = h * 7 / 100;
+        var lastY = h - h * 6 / 100 - smallH;
+        var vy = lastY - bigH + 6;
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 12 / 100, RawBaroData.font(RawBaroData.TEXT_FACE, 28, Graphics.FONT_TINY), "Raw Barometer", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, titleY, titleFont, "Raw Barometer", Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Graph box with dotted grid lines at top and bottom.
-        var gx = w * 18 / 100;
-        var gw = w - 2 * gx;
-        var gy = h * 27 / 100;
-        var gh = h * 30 / 100;
+        // Widest box that stays inside the round screen between the title
+        // and the value: its width is set by the chord at the edge that is
+        // furthest from the centre.
+        var gy = titleY + dc.getFontHeight(titleFont) + 2;
+        var gb = vy + 4;
+        var gh = gb - gy;
+        var r = (w < h ? w : h) / 2;
+        var dy = (h / 2 - gy).abs();
+        var dyb = (gb - h / 2).abs();
+        if (dyb > dy) { dy = dyb; }
+        var half = Math.sqrt(r * r - dy * dy).toNumber() - 4;
+        var gx = cx - half;
+        var gw = 2 * half;
+
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         for (var x = gx; x < gx + gw; x += 4) {
             dc.drawPoint(x, gy);
-            dc.drawPoint(x, gy + gh);
+            dc.drawPoint(x, gb);
         }
-        var hours = PERIODS[_period];
         var range = RawBaroData.drawGraph(dc, RawBaroData.history(hours, gw / 2), gx, gy + 2, gw, gh - 3, 2.0, Graphics.COLOR_BLUE);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
         if (range != null) {
-            dc.drawText(gx + gw, gy - smallH, small, RawBaroData.format(range[1]), Graphics.TEXT_JUSTIFY_RIGHT);
-            dc.drawText(gx + gw, gy + gh, small, RawBaroData.format(range[0]), Graphics.TEXT_JUSTIFY_RIGHT);
+            // High and low sit inside the box, on a black background so the
+            // line under them does not hide the digits.
+            dc.drawText(gx + gw, gy + 2, small, RawBaroData.format(range[1]), Graphics.TEXT_JUSTIFY_RIGHT);
+            dc.drawText(gx + gw, gb - smallH - 1, small, RawBaroData.format(range[0]), Graphics.TEXT_JUSTIFY_RIGHT);
         } else {
             dc.drawText(cx, gy + gh / 2 - smallH / 2, small, "No history", Graphics.TEXT_JUSTIFY_CENTER);
         }
 
         // Current value and unit.
         var value = RawBaroData.format(RawBaroData.current());
-        var bigFont = RawBaroData.font(RawBaroData.NUMBER_FACE, 64, Graphics.FONT_NUMBER_MEDIUM);
-        var vy = h * 62 / 100;
         var vw = dc.getTextWidthInPixels(value, bigFont);
         var uw = dc.getTextWidthInPixels(" hPa", small);
         var vx = cx - (vw + uw) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(vx, vy, bigFont, value, Graphics.TEXT_JUSTIFY_LEFT);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(vx + vw, vy + dc.getFontHeight(bigFont) - smallH - 4, small, " hPa", Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(vx + vw, vy + bigH - smallH - 4, small, " hPa", Graphics.TEXT_JUSTIFY_LEFT);
 
-        dc.drawText(cx, h * 84 / 100, small, "Last " + hours + " Hrs", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, lastY, small, "Last " + hours + " Hrs", Graphics.TEXT_JUSTIFY_CENTER);
     }
 }

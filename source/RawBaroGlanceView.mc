@@ -34,13 +34,14 @@ class RawBaroGlanceView extends WatchUi.GlanceView {
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(vw + 3, vy + valueH - dc.getFontHeight(unitFont) - 2, unitFont, "hPa", Graphics.TEXT_JUSTIFY_LEFT);
 
-        // Trend graph for the last 4 hours in the space right of the value.
+        // Trend graph for the last 4 hours fills all the space right of the
+        // value, to the edge of the glance and down to its bottom. The round
+        // bezel crops the corner when the glance is not in the centre slot.
         var gx = vw + 3 + dc.getTextWidthInPixels("hPa", unitFont) + 8;
-        var gw = w - gx - 16;
-        if (gw > 72) { gw = 72; }
-        if (gw >= 30) {
-            var gy = vy + 6;
-            var gh = valueH - 12;
+        var gw = w - gx;
+        var gy = vy + 4;
+        var gh = h - 2 - gy;
+        if (gw >= 30 && gh >= 10) {
             RawBaroData.drawGraph(dc, RawBaroData.history(4, gw / 3), gx, gy, gw, gh, 1.0, Graphics.COLOR_WHITE);
         }
     }
