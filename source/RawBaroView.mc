@@ -22,6 +22,7 @@ class RawBaroView extends WatchUi.View {
     var _timer as Timer.Timer or Null;
     var _icon as WatchUi.BitmapResource or Null;
     var _small as Graphics.FontType = Graphics.FONT_XTINY;
+    var _buffer as Graphics.BufferedBitmap or Null;
 
     function initialize() {
         View.initialize();
@@ -30,6 +31,15 @@ class RawBaroView extends WatchUi.View {
     function onLayout(dc as Graphics.Dc) as Void {
         _icon = WatchUi.loadResource(Rez.Drawables.Icon24) as WatchUi.BitmapResource;
         _small = RawBaroData.bionic(26, Graphics.FONT_XTINY);
+        // The screen is drawn off screen and copied in one step. Drawing
+        // straight to the display let the watch show a half-drawn first
+        // frame (the filled graph before its grid).
+        var opts = {:width => dc.getWidth(), :height => dc.getHeight()};
+        if (Graphics has :createBufferedBitmap) {
+            _buffer = Graphics.createBufferedBitmap(opts).get() as Graphics.BufferedBitmap;
+        } else {
+            _buffer = new Graphics.BufferedBitmap(opts);
+        }
     }
 
     function nextPeriod() as Void {
@@ -59,6 +69,16 @@ class RawBaroView extends WatchUi.View {
     }
 
     function onUpdate(dc as Graphics.Dc) as Void {
+        var buffer = _buffer;
+        if (buffer != null) {
+            drawScreen(buffer.getDc());
+            dc.drawBitmap(0, 0, buffer);
+        } else {
+            drawScreen(dc);
+        }
+    }
+
+    private function drawScreen(dc as Graphics.Dc) as Void {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.clear();
         if (dc has :setAntiAlias) {
@@ -153,8 +173,13 @@ class RawBaroView extends WatchUi.View {
                 dc.setColor(RawBaroData.GRID_FILLED, Graphics.COLOR_TRANSPARENT);
                 dc.drawLine(x, fy, x, BOX_BOTTOM);
             } else {
+                dc.setColor(RawBaroData.GRID, Graphics.COLOR_TRANSPARENT);
+                var filled = false;
                 for (var y = BOX_TOP + 1; y < BOX_BOTTOM; y += 2) {
-                    dc.setColor(y >= fy ? RawBaroData.GRID_FILLED : RawBaroData.GRID, Graphics.COLOR_TRANSPARENT);
+                    if (!filled && y >= fy) {
+                        filled = true;
+                        dc.setColor(RawBaroData.GRID_FILLED, Graphics.COLOR_TRANSPARENT);
+                    }
                     dc.drawPoint(x, y);
                 }
             }
@@ -173,15 +198,34 @@ class RawBaroView extends WatchUi.View {
             var solid = r % 2 == 0;
             var vi = 0;
             var vx = vlines.size() > 0 ? vlines[vlines.size() - 1] : -9;
-            for (var x = 0; x < BOX_W; x++) {
-                var cross = (x == vx);
-                if (cross) {
-                    vi++;
-                    vx = vi < vlines.size() ? vlines[vlines.size() - 1 - vi] : -9;
+            var color = -1;
+            var runStart = 0;
+            for (var x = 0; x <= BOX_W; x++) {
+                var c = -1;
+                var cross = false;
+                if (x < BOX_W) {
+                    cross = (x == vx);
+                    if (cross) {
+                        vi++;
+                        vx = vi < vlines.size() ? vlines[vlines.size() - 1 - vi] : -9;
+                    }
+                    c = (ys[x] >= 0 && y >= ys[x]) ? RawBaroData.GRID_FILLED : RawBaroData.GRID;
                 }
-                if (solid || x % 2 == 0 || cross) {
-                    var fy = ys[x] >= 0 ? ys[x] : BOX_BOTTOM + 1;
-                    dc.setColor(y >= fy ? RawBaroData.GRID_FILLED : RawBaroData.GRID, Graphics.COLOR_TRANSPARENT);
+                if (solid) {
+                    // One line per run of the same colour.
+                    if (c != color) {
+                        if (color != -1) {
+                            dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+                            dc.drawLine(runStart, y, x, y);
+                        }
+                        color = c;
+                        runStart = x;
+                    }
+                } else if (x < BOX_W && (x % 2 == 0 || cross)) {
+                    if (c != color) {
+                        color = c;
+                        dc.setColor(c, Graphics.COLOR_TRANSPARENT);
+                    }
                     dc.drawPoint(x, y);
                 }
             }
