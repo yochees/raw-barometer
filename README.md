@@ -1,11 +1,18 @@
 # Raw Barometer
 
-Connect IQ glance for the fenix 8. It shows the raw (station) pressure in hPa:
+Connect IQ glance for the fenix 8. It shows the raw (station) pressure:
 the value the sensor measures, not reduced to sea level and not corrected for
 altitude. Glance and full view are a pixel copy of the stock fenix 8 MIP
 Barometer screens (measured on watch screenshots), with our own icon. START
 opens the full view; there START / DOWN / UP change the period (4, 12, 24
-hours).
+hours) and MENU (hold UP) picks the unit: hPa, mbar, inHg or mmHg. The phone
+app settings (store installs only) edit the same `Unit` property.
+
+The layout is drawn pixel by pixel for a 280x280 MIP screen, so the manifest
+lists only those watches with app glances (API 4.0+): fenix 7X / 7X Pro, fenix
+8 Solar 51mm, fenix 9 Pro Solar 51mm, Enduro 3 and 4. Left out on purpose: the
+original Enduro (watchdog trips, 128 KB), fenix 6X Pro and Descent Mk2 (API
+3.4, no glance for apps), and every other screen size.
 
 Value source, first one that has data: `Activity.Info.rawAmbientPressure`,
 `Sensor.Info.pressure`, `Activity.Info.ambientPressure`, last
