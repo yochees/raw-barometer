@@ -37,9 +37,10 @@ class RawBaroGlanceView extends WatchUi.GlanceView {
             return;
         }
         var range = hi - lo;
-        if (range < 0.2) {
-            lo -= (0.2 - range) / 2;
-            range = 0.2;
+        var minRange = 0.2 * RawBaroData.factor();
+        if (range < minRange) {
+            lo -= (minRange - range) / 2;
+            range = minRange;
         }
         if (dc has :setAntiAlias) {
             dc.setAntiAlias(true);

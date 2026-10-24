@@ -1,7 +1,8 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// START and DOWN show a longer period, UP a shorter one. BACK exits.
+// START and DOWN show a longer period, UP a shorter one. MENU (hold UP)
+// opens the unit menu. BACK exits.
 class RawBaroDelegate extends WatchUi.BehaviorDelegate {
 
     var _view as RawBaroView;
@@ -18,6 +19,11 @@ class RawBaroDelegate extends WatchUi.BehaviorDelegate {
 
     function onNextPage() as Boolean {
         _view.nextPeriod();
+        return true;
+    }
+
+    function onMenu() as Boolean {
+        RawBaroMenu.open();
         return true;
     }
 

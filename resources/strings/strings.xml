@@ -1,3 +1,8 @@
 <strings>
     <string id="AppName">Raw Barometer</string>
+    <string id="SettUnit">Unit</string>
+    <string id="UnitHpa">Hectopascals (hPa)</string>
+    <string id="UnitMbar">Millibars (mbar)</string>
+    <string id="UnitInhg">Inches of Mercury (inHg)</string>
+    <string id="UnitMmhg">Millimeters of Mercury (mmHg)</string>
 </strings>

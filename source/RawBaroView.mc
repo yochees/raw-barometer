@@ -112,16 +112,20 @@ class RawBaroView extends WatchUi.View {
         var lo = h[1] as Float or Null;
         var hi = h[3] as Float or Null;
 
-        // Scale: whole hPa at top and bottom, an even span of at least 2 hPa
-        // so the middle line is a whole hPa too. Solid lines every span / 4,
-        // dotted between them, labels on the top and middle lines.
+        // Scale: whole grid steps (q = 1 hPa, mbar or mmHg, 0.02 inHg) at
+        // top and bottom, an even span of at least 2 steps so the middle
+        // line is a whole step too. Solid lines every span / 4, dotted
+        // between them, labels on the top and middle lines.
+        var q = RawBaroData.step();
         var top = 1;
         var span = 2;
         if (lo != null && hi != null) {
-            var bottom = Math.floor(lo).toNumber();
-            top = Math.ceil(hi).toNumber();
+            var loQ = lo / q;
+            var hiQ = hi / q;
+            var bottom = Math.floor(loQ).toNumber();
+            top = Math.ceil(hiQ).toNumber();
             while (top - bottom < 2 || (top - bottom) % 2 != 0) {
-                if (lo - bottom < top - hi) {
+                if (loQ - bottom < top - hiQ) {
                     bottom -= 1;
                 } else {
                     top += 1;
@@ -135,7 +139,7 @@ class RawBaroView extends WatchUi.View {
         var ys = new Array<Number>[BOX_W];
         for (var x = 0; x < BOX_W; x++) {
             var p = cols[x];
-            ys[x] = p == null ? -1 : BOX_TOP + ((top - p) * boxH / span).toNumber();
+            ys[x] = p == null ? -1 : BOX_TOP + ((top * q - p) * boxH / (span * q)).toNumber();
         }
 
         // Filled area under the line.
@@ -233,8 +237,8 @@ class RawBaroView extends WatchUi.View {
 
         // Axis labels on the top and middle lines.
         dc.setColor(RawBaroData.LABEL, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(230, BOX_TOP - 13, _small, top.toString(), Graphics.TEXT_JUSTIFY_LEFT);
-        dc.drawText(230, BOX_TOP + boxH / 2 - 13, _small, (top - span / 2).toString(), Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(230, BOX_TOP - 13, _small, axisLabel(top, q), Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(230, BOX_TOP + boxH / 2 - 13, _small, axisLabel(top - span / 2, q), Graphics.TEXT_JUSTIFY_LEFT);
 
         if (lo == null || hi == null) {
             dc.setColor(RawBaroData.LABEL, Graphics.COLOR_TRANSPARENT);
@@ -273,6 +277,10 @@ class RawBaroView extends WatchUi.View {
             drawTriangle(dc, minX, ys[minX] - 2, -1);
             drawMarkerLabel(dc, minX, base - 24, RawBaroData.format(lo));
         }
+    }
+
+    private function axisLabel(steps as Number, q as Float) as String {
+        return q < 1.0 ? (steps * q).format("%.2f") : steps.toString();
     }
 
     // 10 px wide, 5 rows, apex at (cx, apexY); dir 1 points up, -1 down.

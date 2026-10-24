@@ -1,4 +1,5 @@
 import Toybox.Activity;
+import Toybox.Application;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
@@ -7,7 +8,8 @@ import Toybox.SensorHistory;
 import Toybox.Time;
 
 // Raw (station) pressure: the value the sensor measures, not reduced to sea
-// level and not corrected for altitude. All values are in hPa (= mbar).
+// level and not corrected for altitude. Values are in the unit chosen in the
+// settings (property "Unit"); the sensor gives Pa.
 (:glance)
 module RawBaroData {
 
@@ -22,8 +24,37 @@ module RawBaroData {
     const GRID_FILLED = 0x005555;
     const LABEL = 0xAAAAAA;
 
-    // Current raw pressure in hPa, or null if no source has a value.
+    const UNIT_HPA = 0;
+    const UNIT_MBAR = 1;
+    const UNIT_INHG = 2;
+    const UNIT_MMHG = 3;
+
+    function unit() as Number {
+        var u = Application.Properties.getValue("Unit");
+        return (u instanceof Number && u >= 0 && u <= 3) ? u : UNIT_HPA;
+    }
+
+    // Units per hPa.
+    function factor() as Float {
+        var u = unit();
+        if (u == UNIT_INHG) { return 0.0295300; }
+        if (u == UNIT_MMHG) { return 0.750062; }
+        return 1.0;
+    }
+
+    // Grid step of the graph scale, in the display unit (about 1 hPa).
+    function step() as Float {
+        return unit() == UNIT_INHG ? 0.02 : 1.0;
+    }
+
+    // Current raw pressure in the display unit, or null if no source has a
+    // value.
     function current() as Float or Null {
+        var p = currentHpa();
+        return p == null ? null : p * factor();
+    }
+
+    function currentHpa() as Float or Null {
         var info = Activity.getActivityInfo();
         if (info != null) {
             if (info.rawAmbientPressure != null) {
@@ -61,6 +92,7 @@ module RawBaroData {
         var loCol = 0;
         var hi = null;
         var hiCol = 0;
+        var f = factor();
         var now = Time.now().value();
         var it = SensorHistory.getPressureHistory({:period => new Time.Duration(seconds), :order => SensorHistory.ORDER_OLDEST_FIRST});
         var sample = it.next();
@@ -70,7 +102,7 @@ module RawBaroData {
                 var col = n - 1 - (age.toLong() * n / seconds).toNumber();
                 if (col >= 0) {
                     if (col > n - 1) { col = n - 1; }
-                    var p = sample.data / 100.0;
+                    var p = sample.data / 100.0 * f;
                     sums[col] += p;
                     counts[col] += 1;
                     if (lo == null || p < lo) { lo = p; loCol = col; }
@@ -117,6 +149,9 @@ module RawBaroData {
     }
 
     function format(p as Float or Null) as String {
-        return p == null ? "--" : p.format("%.1f");
+        if (p == null) {
+            return "--";
+        }
+        return p.format(unit() == UNIT_INHG ? "%.2f" : "%.1f");
     }
 }

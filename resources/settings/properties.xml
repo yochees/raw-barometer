@@ -1,0 +1,4 @@
+<properties>
+    <!-- 0 hPa, 1 mbar, 2 inHg, 3 mmHg (RawBaroData.UNIT_*). -->
+    <property id="Unit" type="number">0</property>
+</properties>

@@ -18,6 +18,11 @@ class RawBaroApp extends Application.AppBase {
         return [new RawBaroGlanceView()];
     }
 
+    // Unit changed in the phone app.
+    function onSettingsChanged() as Void {
+        WatchUi.requestUpdate();
+    }
+
     // Light blue side bar, as on the stock Barometer glance.
     function getGlanceTheme() as Application.AppBase.GlanceTheme {
         return Application.AppBase.GLANCE_THEME_LIGHT_BLUE;
