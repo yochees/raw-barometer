@@ -22,3 +22,12 @@ export SDK="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-sd
 
 Simulator: Settings > Glance Launch Mode switches between the glance and the
 full view.
+
+## Store
+
+`store/` has the Connect IQ store listing text (`description.md`), icon, hero
+image and screenshots. The store package is built with:
+
+```sh
+"$SDK/bin/monkeyc" -e -o bin/RawBaro.iq -f monkey.jungle -y developer_key.der -r
+```
