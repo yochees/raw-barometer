@@ -22,7 +22,7 @@ Raw Barometer shows the sensor value in all modes, so you can keep the Auto mode
 Compatible watches (280x280 memory-in-pixel screen):
 - fenix 8 Solar 51mm, tactix 8 Solar 51mm
 - fenix 9 Pro Solar 51mm
-- fenix 7X, fenix 7X Pro, fenix 7X Pro Solar (no Wi-Fi), tactix 7, quatix 7X Solar
+- fenix 7X, fenix 7X Pro, fenix 7X Pro Solar (no Wi-Fi), tactix 7
 - Enduro 2, Enduro 3, Enduro 4
 
 ## Images
