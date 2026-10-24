@@ -12,7 +12,7 @@ Here is the solution. Raw Barometer shows the raw (station) pressure in hPa: the
 - Full view: current pressure and a graph with the minimum and maximum readings.
 - Push START, DOWN or UP to change the graph period: 4, 12 or 24 hours.
 
-Made for the fenix 8 MIP (Solar 47/51 mm, 43/47 mm, Pro 47 mm).
+Made for the fenix 8.
 
 ## Images
 - Icon: rawbaro-icon-512.png
